@@ -1,84 +1,165 @@
-<script>
-    async function generate() {
-        const prompt = document.getElementById('prompt').value;
-        const btn = document.getElementById('btn');
-        const status = document.getElementById('status');
-        const img = document.getElementById('outputImage');
-        const apiOut = document.getElementById('apiOutput');
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini 3 Pro Image Generator</title>
+    <style>
+        :root { --bg: #121212; --card-bg: #1e1e1e; --primary: #3b82f6; --text: #e5e5e5; }
+        body { font-family: system-ui, -apple-system, sans-serif; max-width: 1000px; margin: 0 auto; padding: 2rem; background: var(--bg); color: var(--text); }
+        h1 { text-align: center; margin-bottom: 2rem; background: linear-gradient(90deg, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+        .card { background: var(--card-bg); padding: 1.5rem; border-radius: 1rem; border: 1px solid #333; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3); }
+        .label { display: block; font-size: 0.875rem; color: #888; margin-bottom: 0.5rem; font-weight: 500; }
+        textarea { width: 100%; height: 120px; background: #2d2d2d; border: 1px solid #404040; color: white; padding: 1rem; border-radius: 0.5rem; resize: none; font-size: 1rem; box-sizing: border-box; }
+        textarea:focus { outline: 2px solid var(--primary); border-color: transparent; }
+        button { background: var(--primary); color: white; border: none; padding: 1rem; width: 100%; border-radius: 0.5rem; font-weight: 600; cursor: pointer; margin-top: 1rem; transition: opacity 0.2s; }
+        button:hover { opacity: 0.9; }
+        button:disabled { background: #4b5563; cursor: not-allowed; opacity: 0.7; }
+        #status { margin-top: 1rem; font-size: 0.9rem; text-align: center; min-height: 1.2em; }
+        
+        /* 圖片容器 */
+        .img-container { min-height: 300px; display: flex; align-items: center; justify-content: center; background: #000; border-radius: 0.5rem; overflow: hidden; position: relative; }
+        img { max-width: 100%; display: none; }
+        .placeholder { color: #555; font-size: 0.9rem; }
+        
+        /* Debug 區域 */
+        details { margin-top: 2rem; background: #1a1a1a; border-radius: 0.5rem; padding: 0.5rem; }
+        summary { cursor: pointer; color: #888; padding: 0.5rem; user-select: none; }
+        pre { background: #000; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; font-size: 0.75rem; color: #0f0; max-height: 300px; margin: 0.5rem 0 0 0; white-space: pre-wrap; word-break: break-all; }
 
-        if (!prompt) return;
+        @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <h1>✨ Gemini 3 Pro 圖像生成</h1>
+    
+    <div class="grid">
+        <!-- 輸入區 -->
+        <div class="card">
+            <label class="label">提示詞 (Prompt)</label>
+            <textarea id="prompt" placeholder="描述你想生成的畫面...&#10;例：A futuristic cyberpunk city, neon lights, rain, 8k resolution">Cyberpunk street at night, neon lights, realistic, 8k</textarea>
+            <button id="btn" onclick="generate()">生成圖片 (Generate)</button>
+            <div id="status">準備就緒</div>
+        </div>
 
-        // 1. UI 狀態更新：鎖定按鈕，顯示載入中
-        btn.disabled = true;
-        status.innerText = "⏳ 請求後端 API 中...";
-        img.style.display = 'none';
-        apiOut.innerText = "Loading...";
+        <!-- 結果區 -->
+        <div class="card">
+            <label class="label">預覽結果</label>
+            <div class="img-container">
+                <span class="placeholder" id="placeholder">等待生成...</span>
+                <img id="outputImage" alt="Generated Result" />
+            </div>
+        </div>
+    </div>
 
-        try {
-            // 2. 發送請求給你的 Zeabur 後端
-            const response = await fetch('/api/generate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: prompt }] }],
-                    generationConfig: {
-                        responseModalities: ["IMAGE"],
-                        imageConfig: { aspectRatio: "16:9", imageCount: 1 }
-                    }
-                })
-            });
+    <!-- Debug 區 -->
+    <details>
+        <summary>🛠️ 開發者資訊 (API Response)</summary>
+        <pre id="apiOutput">// API 回應將顯示於此...</pre>
+    </details>
 
-            // 3. 獲取原始文本 (為了處理可能的 HTML 錯誤頁面)
-            const rawText = await response.text();
-            let data;
-            
+    <script>
+        async function generate() {
+            const prompt = document.getElementById('prompt').value;
+            const btn = document.getElementById('btn');
+            const status = document.getElementById('status');
+            const img = document.getElementById('outputImage');
+            const placeholder = document.getElementById('placeholder');
+            const apiOut = document.getElementById('apiOutput');
+
+            if (!prompt) return;
+
+            // 1. UI 鎖定與重置
+            btn.disabled = true;
+            status.innerText = "⏳ 正在請求 API (這可能需要 10-20 秒)...";
+            status.style.color = "#ccc";
+            img.style.display = 'none';
+            placeholder.style.display = 'block';
+            placeholder.innerText = "正在繪圖中...";
+            apiOut.innerText = "Waiting for response...";
+
             try {
-                data = JSON.parse(rawText);
-            } catch (e) {
-                // 如果解析 JSON 失敗，通常代表 API 報錯回傳了 HTML
-                throw new Error("API 回傳了非 JSON 內容 (可能是 502/404 錯誤):\n" + rawText.substring(0, 200) + "...");
-            }
-            
-            // 顯示原始 JSON (Debug 用)
-            apiOut.innerText = JSON.stringify(data, null, 2);
-            status.innerText = `請求完成 (Status: ${response.status})`;
+                // 2. 發送請求
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: {
+                            responseModalities: ["IMAGE"],
+                            imageConfig: { aspectRatio: "16:9", imageCount: 1 }
+                        }
+                    })
+                });
 
-            // 4. 🎯 核心修正：智能圖片解析邏輯
-            let b64 = null;
-            const part = data.candidates?.[0]?.content?.parts?.[0];
+                // 3. 處理回應數據
+                const rawText = await response.text();
+                let data;
 
-            if (part) {
-                if (part.inlineData && part.inlineData.data) {
-                    // 情況 A: 標準 Gemini 格式 (直接在 inlineData 裡)
-                    b64 = part.inlineData.data;
-                } else if (part.text) {
-                    // 情況 B: Markdown 格式 (你的 paste.txt 屬於這種)
-                    // 使用正則表達式從文字中提取 base64 圖片數據
-                    const match = part.text.match(/data:image\/png;base64,([^"\)\s]+)/);
-                    if (match && match[1]) {
-                        b64 = match[1];
+                try {
+                    data = JSON.parse(rawText);
+                } catch (e) {
+                    throw new Error(`API 回傳了非 JSON 格式 (可能是 HTML 錯誤頁): \n${rawText.substring(0, 300)}...`);
+                }
+
+                // 更新 Debug 面板 (截斷過長的 Base64 以免瀏覽器卡死)
+                const debugJson = JSON.stringify(data, null, 2);
+                apiOut.innerText = debugJson.length > 5000 
+                    ? debugJson.substring(0, 5000) + "\n... (內容過長已截斷)" 
+                    : debugJson;
+
+                status.innerText = `伺服器回應: ${response.status}`;
+
+                // 4. 智能解析圖片數據
+                let b64 = null;
+                const part = data.candidates?.[0]?.content?.parts?.[0];
+
+                if (part) {
+                    if (part.inlineData && part.inlineData.data) {
+                        // 情況 A: 標準格式
+                        console.log("模式: 標準 inlineData");
+                        b64 = part.inlineData.data;
+                    } else if (part.text) {
+                        // 情況 B: Markdown 格式
+                        console.log("模式: Markdown text");
+                        // 使用通用正則提取 Base64
+                        const match = part.text.match(/data:image\/[^;]+;base64,([A-Za-z0-9+/=]+)/);
+                        if (match && match[1]) b64 = match[1];
                     }
                 }
-            }
 
-            // 5. 顯示圖片或報錯
-            if (b64) {
-                // 注意：不需要再加上 'data:image/png;base64,' 因為正則可能已經包含了，或者格式需要調整
-                // 修正：上面的正則只抓取了逗號後面的數據，所以這裡需要補上前綴
-                img.src = `data:image/png;base64,${b64}`;
-                img.style.display = 'block';
-                status.innerText = "✅ 圖片生成成功！";
-            } else {
-                status.innerText = "⚠️ 生成成功，但無法解析圖片數據";
-                console.error("無法解析的 Part 結構:", part);
-            }
+                // 5. 渲染圖片
+                if (b64 && b64.length > 100) {
+                    img.onload = () => {
+                        status.innerText = `✅ 生成成功！(${img.naturalWidth}x${img.naturalHeight})`;
+                        status.style.color = "#4ade80"; // Green
+                        placeholder.style.display = 'none';
+                        img.style.display = 'block';
+                    };
+                    img.onerror = () => {
+                        status.innerText = "❌ 圖片解碼失敗 (Base64 損壞)";
+                        status.style.color = "#ef4444"; // Red
+                    };
+                    
+                    // 設定圖片源 (強制 PNG 頭)
+                    img.src = `data:image/png;base64,${b64}`;
+                } else {
+                    status.innerText = "⚠️ API 回應正常但未找到圖片數據";
+                    status.style.color = "#f59e0b"; // Orange
+                    placeholder.innerText = "無圖片數據";
+                    console.error("解析失敗，數據結構:", part);
+                }
 
-        } catch (e) {
-            status.innerText = "❌ 發生錯誤";
-            apiOut.innerText = "Error: " + e.message;
-            console.error(e);
-        } finally {
-            btn.disabled = false;
+            } catch (e) {
+                status.innerText = "❌ 發生錯誤";
+                status.style.color = "#ef4444";
+                apiOut.innerText = `Error: ${e.message}\n\nStack:\n${e.stack}`;
+                console.error(e);
+            } finally {
+                btn.disabled = false;
+            }
         }
-    }
-</script>
+    </script>
+</body>
+</html>
