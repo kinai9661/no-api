@@ -4,67 +4,73 @@ const fetch = require('node-fetch');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// 允許跨域，並設定較大的 JSON 限制以支援多圖回傳
-app.use(cors());
-app.use(express.json({ limit: '100mb' })); 
+// 允許前端獲取 Debug Header
+app.use(cors({
+    exposedHeaders: ['x-final-destination', 'x-proxy-latency']
+}));
+app.use(express.json({ limit: '50mb' }));
 app.use(express.static('public'));
 
-// 通用 Proxy 接口
 app.post('/api/proxy', async (req, res) => {
-    // 1. 從 Header 獲取前端傳來的目標設定
+    const startTime = Date.now();
     let targetUrl = req.headers['x-target-url'];
     const targetKey = req.headers['x-target-key'];
-    
-    // 基本驗證
-    if (!targetUrl) {
-        return res.status(400).json({ error: "Missing x-target-url header" });
+
+    if (!targetUrl) return res.status(400).json({ error: "Missing Target URL" });
+
+    // --- 智慧 Key 注入策略 ---
+    const headers = {
+        'Content-Type': 'application/json',
+        'User-Agent': 'Gemini-Proxy/4.0 (Node.js)'
+    };
+
+    // 策略 A: Google 官方或相容 API -> 使用 ?key=
+    if (targetKey && (targetUrl.includes('googleapis.com') || targetUrl.includes('goog'))) {
+        if (!targetUrl.includes('key=')) {
+            const separator = targetUrl.includes('?') ? '&' : '?';
+            targetUrl = `${targetUrl}${separator}key=${targetKey}`;
+        }
+    } 
+    // 策略 B: 其他標準 Proxy (OpenAI 格式) -> 使用 Bearer Token
+    else if (targetKey) {
+        headers['Authorization'] = `Bearer ${targetKey}`;
+        headers['x-api-key'] = targetKey; // 某些代理用這個
     }
 
-    // 2. 智能 Key 注入
-    // 如果 URL 裡沒有 ?key= 但前端傳了 Key，自動補上
-    if (targetKey && !targetUrl.includes('key=')) {
-        const separator = targetUrl.includes('?') ? '&' : '?';
-        targetUrl = `${targetUrl}${separator}key=${targetKey}`;
-    }
-
-    console.log(`[Proxy] Request -> ${targetUrl.substring(0, 60)}...`);
+    // --- 準備 Debug 資訊 (遮蔽 Key) ---
+    let debugUrl = targetUrl.replace(/key=([^&]+)/, 'key=HIDDEN_KEY');
+    console.log(`[Proxy] Forwarding to: ${debugUrl}`);
 
     try {
-        // 3. 轉發請求
         const response = await fetch(targetUrl, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                // 偽裝 User-Agent 避免被簡單的反爬蟲擋下
-                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-            },
+            headers: headers,
             body: JSON.stringify(req.body)
         });
 
-        // 4. 處理回應
-        const rawText = await response.text();
-        console.log(`[Proxy] Response Status: ${response.status} (Size: ${(rawText.length/1024).toFixed(2)} KB)`);
+        // 設定 Debug Headers
+        res.setHeader('x-final-destination', debugUrl);
+        res.setHeader('x-proxy-latency', `${Date.now() - startTime}ms`);
 
+        const rawText = await response.text();
+        
         try {
-            // 嘗試解析 JSON
             const data = JSON.parse(rawText);
             res.status(response.status).json(data);
         } catch (e) {
-            // 解析失敗（通常是 HTML 錯誤頁）
-            console.error("Proxy JSON Parse Error. First 100 chars:", rawText.substring(0, 100));
+            // 處理非 JSON 回應 (如 HTML 錯誤頁)
             res.status(502).json({
-                error: "Upstream API returned non-JSON response",
+                error: "Upstream Non-JSON Response",
                 status: response.status,
-                raw_preview: rawText.substring(0, 1000) // 回傳部分內容供前端 debug
+                preview: rawText.substring(0, 1000)
             });
         }
 
     } catch (error) {
-        console.error("Proxy Internal Error:", error);
-        res.status(500).json({ error: error.message });
+        console.error("[Proxy Error]", error.message);
+        res.setHeader('x-final-destination', debugUrl);
+        res.status(500).json({ error: "Internal Proxy Error", details: error.message });
     }
 });
 
-app.listen(PORT, () => {
-    console.log(`🚀 Proxy Server running on port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`🚀 Proxy v4.0 running on port ${PORT}`));
