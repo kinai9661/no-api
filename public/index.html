@@ -3,176 +3,268 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gemini 3 Image Station v2.2</title>
+    <title>Gemini 3 Pro - API Manager Edition</title>
     <style>
-        :root { --bg: #0b1120; --card: #1e293b; --primary: #3b82f6; --text: #f8fafc; --border: #334155; }
-        body { font-family: system-ui, -apple-system, sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; background: var(--bg); color: var(--text); }
+        :root { --bg: #0f172a; --card: #1e293b; --primary: #3b82f6; --danger: #ef4444; --text: #f1f5f9; --border: #334155; }
+        body { font-family: system-ui, -apple-system, sans-serif; max-width: 1400px; margin: 0 auto; padding: 20px; background: var(--bg); color: var(--text); }
         
-        /* 標題與版本 */
-        header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 24px; border-bottom: 1px solid var(--border); padding-bottom: 16px; }
-        h1 { margin: 0; background: linear-gradient(to right, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .version { font-size: 0.8rem; color: #64748b; font-family: monospace; }
-
+        /* 標題 */
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 15px; }
+        h1 { font-size: 1.5rem; margin: 0; background: linear-gradient(90deg, #60a5fa, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
         /* 主佈局 */
-        .grid-container { display: grid; grid-template-columns: 360px 1fr; gap: 24px; }
+        .grid { display: grid; grid-template-columns: 380px 1fr; gap: 24px; }
         
-        /* 卡片共用樣式 */
-        .panel { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3); }
+        /* 面板樣式 */
+        .panel { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); display: flex; flex-direction: column; gap: 16px; }
+        .section-title { font-size: 0.85rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #333; padding-bottom: 8px; margin-bottom: 8px; }
+
+        /* API 管理區塊專用樣式 */
+        .api-manager { background: #0b1120; border: 1px solid #475569; padding: 15px; border-radius: 8px; }
+        .row { display: flex; gap: 10px; margin-bottom: 10px; }
         
-        /* 表單元件 */
-        .form-group { margin-bottom: 16px; }
-        label { display: block; font-size: 0.8rem; color: #94a3b8; margin-bottom: 6px; font-weight: 600; letter-spacing: 0.5px; }
-        input, select, textarea { width: 100%; background: #0f172a; border: 1px solid var(--border); color: white; padding: 10px; border-radius: 6px; box-sizing: border-box; font-size: 0.9rem; transition: border-color 0.2s; }
-        input:focus, select:focus, textarea:focus { border-color: var(--primary); outline: none; }
-        textarea { height: 110px; resize: vertical; line-height: 1.5; }
+        /* 輸入元件 */
+        label { font-size: 0.8rem; color: #cbd5e1; margin-bottom: 4px; display: block; }
+        input, select, textarea { width: 100%; background: #1e293b; border: 1px solid var(--border); color: white; padding: 10px; border-radius: 6px; font-size: 0.9rem; box-sizing: border-box; }
+        input:focus, textarea:focus, select:focus { border-color: var(--primary); outline: none; }
+        textarea { height: 100px; resize: vertical; }
 
-        /* 按鈕 */
-        .btn-primary { background: var(--primary); color: white; border: none; padding: 12px; width: 100%; border-radius: 6px; font-weight: 700; cursor: pointer; margin-top: 8px; }
-        .btn-primary:hover { filter: brightness(1.1); }
-        .btn-primary:disabled { background: #475569; cursor: not-allowed; opacity: 0.8; }
+        /* 按鈕群組 */
+        .btn { padding: 10px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: filter 0.2s; }
+        .btn-primary { background: var(--primary); color: white; width: 100%; }
+        .btn-sm { padding: 6px 12px; font-size: 0.8rem; }
+        .btn-save { background: #10b981; color: white; flex: 1; }
+        .btn-del { background: var(--danger); color: white; }
+        .btn:hover { filter: brightness(1.15); }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
-        /* 右側畫廊 */
-        .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; min-height: 200px; }
-        .img-box { background: #000; border-radius: 8px; overflow: hidden; aspect-ratio: 16/9; position: relative; border: 1px solid #333; display: flex; align-items: center; justify-content: center; }
-        .img-box img { width: 100%; height: 100%; object-fit: contain; cursor: zoom-in; }
-        .placeholder { color: #475569; font-size: 0.9rem; }
+        /* 畫廊 */
+        .gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+        .img-box { aspect-ratio: 16/9; background: #000; border: 1px solid #333; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; position: relative; }
+        .img-box img { width: 100%; height: 100%; object-fit: contain; }
+        .placeholder { color: #64748b; font-size: 0.9rem; }
 
-        /* Debug 區域 */
-        details { margin-top: 24px; background: #000; border: 1px solid #333; border-radius: 8px; }
-        summary { padding: 12px; color: #64748b; cursor: pointer; font-family: monospace; font-size: 0.8rem; }
-        pre { margin: 0; padding: 16px; color: #4ade80; font-size: 0.75rem; overflow-x: auto; max-height: 300px; }
+        /* Debug Log */
+        details { margin-top: 20px; background: #000; border-radius: 8px; }
+        summary { padding: 10px; color: #64748b; font-family: monospace; cursor: pointer; }
+        pre { color: #22c55e; padding: 15px; margin: 0; overflow: auto; max-height: 200px; font-size: 0.8rem; }
 
-        @media (max-width: 800px) { .grid-container { grid-template-columns: 1fr; } }
+        @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
 
 <header>
-    <h1>Gemini 3 Image Station</h1>
-    <span class="version">v2.2 API Selector</span>
+    <h1>Gemini 3 Pro Controller</h1>
+    <div style="font-size: 0.8rem; color: #64748b;">v3.0 API Manager</div>
 </header>
 
-<div class="grid-container">
-    <!-- 左側：設定面板 -->
+<div class="grid">
+    <!-- 左側控制區 -->
     <div class="panel">
         
-        <!-- 1. API 設定區 -->
-        <div style="background: #0f172a; padding: 12px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #334155;">
-            <div class="form-group">
-                <label>📡 選擇 API 線路</label>
-                <select id="apiSelector" onchange="toggleCustomUrl()">
-                    <option value="default">預設 (Appmedo Proxy)</option>
-                    <option value="official">Google Official (需 API Key)</option>
-                    <option value="custom">自定義 URL...</option>
-                </select>
-            </div>
+        <!-- 1. API 管理模組 -->
+        <div class="api-manager">
+            <div class="section-title">📡 線路設定 (Endpoints)</div>
             
-            <!-- 自定義 URL 輸入框 (預設隱藏) -->
-            <div class="form-group" id="customUrlGroup" style="display:none;">
-                <label>自定義 API URL</label>
-                <input type="text" id="customUrl" placeholder="https://..." />
+            <div class="form-group">
+                <label>已存線路</label>
+                <div class="row">
+                    <select id="savedApis" onchange="loadApiConfig()">
+                        <option value="">-- 選擇或新增 --</option>
+                    </select>
+                    <button class="btn btn-del btn-sm" onclick="deleteApi()" title="刪除此線路">🗑️</button>
+                </div>
             </div>
 
             <div class="form-group">
-                <label>🔑 API Key (選填)</label>
+                <label>API 名稱 (別名)</label>
+                <input type="text" id="apiName" placeholder="例如: My Appmedo Proxy" />
+            </div>
+
+            <div class="form-group">
+                <label>API URL (Endpoint Address)</label>
+                <input type="text" id="apiUrl" placeholder="https://..." />
+            </div>
+
+            <div class="form-group">
+                <label>API Key (Optional)</label>
                 <input type="password" id="apiKey" placeholder="AIzaSy..." />
             </div>
+
+            <button class="btn btn-save btn-sm" style="width:100%; margin-top:8px;" onclick="saveApi()">💾 儲存 / 更新線路</button>
         </div>
 
-        <!-- 2. 生成參數區 -->
-        <div class="form-group">
-            <label>🎨 提示詞 (Prompt)</label>
-            <textarea id="prompt" placeholder="描述畫面細節...">Cyberpunk city, neon lights, 8k resolution, realistic</textarea>
+        <!-- 2. 生成參數 -->
+        <div>
+            <div class="section-title">🎨 生成參數</div>
+            <label>提示詞 (Prompt)</label>
+            <textarea id="prompt" placeholder="Describe the image...">Cyberpunk city, neon lights, 8k, realistic</textarea>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-            <div class="form-group">
+        <div class="row">
+            <div style="flex:1">
                 <label>比例</label>
                 <select id="aspectRatio">
-                    <option value="16:9">16:9 橫向</option>
-                    <option value="1:1">1:1 正方</option>
-                    <option value="9:16">9:16 直向</option>
-                    <option value="4:3">4:3 標準</option>
-                    <option value="3:4">3:4 人像</option>
+                    <option value="16:9">16:9</option>
+                    <option value="1:1">1:1</option>
+                    <option value="9:16">9:16</option>
+                    <option value="4:3">4:3</option>
+                    <option value="3:4">3:4</option>
                 </select>
             </div>
-            <div class="form-group">
+            <div style="flex:1">
                 <label>數量</label>
                 <select id="sampleCount">
-                    <option value="1">1 張</option>
-                    <option value="2">2 張</option>
-                    <option value="4">4 張</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="4">4</option>
                 </select>
             </div>
         </div>
 
-        <button id="btn" class="btn-primary" onclick="generate()">🚀 開始生成</button>
-        <div id="status" style="text-align: center; margin-top: 12px; font-size: 0.85rem; color: #94a3b8;">等待指令...</div>
+        <button id="btnGenerate" class="btn btn-primary" onclick="generate()">🚀 開始生成 (Generate)</button>
+        <div id="status" style="text-align: center; color: #94a3b8; font-size: 0.85rem;">Ready</div>
     </div>
 
-    <!-- 右側：展示面板 -->
+    <!-- 右側展示區 -->
     <div class="panel">
-        <label>🖼️ 生成結果</label>
+        <div class="section-title">🖼️ 結果預覽</div>
         <div id="gallery" class="gallery">
-            <div class="img-box"><span class="placeholder">圖片將顯示於此</span></div>
+            <div class="img-box"><span class="placeholder">等待生成...</span></div>
         </div>
     </div>
 </div>
 
 <details>
-    <summary>🛠️ 開發者除錯 (Debug Log)</summary>
-    <pre id="apiOutput">// API 回應將顯示於此...</pre>
+    <summary>🛠️ System Log</summary>
+    <pre id="apiOutput">// Waiting for request...</pre>
 </details>
 
 <script>
-    // 預定義的 URL 常量
-    const URLS = {
-        default: "https://api-integrations.appmedo.com/app-7r29gu4xs001/api-Xa6JZ58oPMEa/v1beta/models/gemini-3-pro-image-preview:generateContent",
-        official: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+    // --- API 管理邏輯 ---
+    const STORAGE_KEY = 'gemini_api_configs_v3';
+    let apiList = [];
+
+    // 初始化
+    window.onload = () => {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+            apiList = JSON.parse(stored);
+            renderApiSelect();
+            // 預設選中第一個
+            if(apiList.length > 0) {
+                document.getElementById('savedApis').value = 0;
+                loadApiConfig();
+            }
+        } else {
+            // 預設加入一個範例
+            apiList = [{
+                name: "Default Appmedo",
+                url: "https://api-integrations.appmedo.com/app-7r29gu4xs001/api-Xa6JZ58oPMEa/v1beta/models/gemini-3-pro-image-preview:generateContent",
+                key: ""
+            }];
+            saveToStorage();
+            renderApiSelect();
+        }
     };
 
-    function toggleCustomUrl() {
-        const val = document.getElementById('apiSelector').value;
-        document.getElementById('customUrlGroup').style.display = (val === 'custom') ? 'block' : 'none';
+    function renderApiSelect() {
+        const sel = document.getElementById('savedApis');
+        sel.innerHTML = '<option value="">-- 新增線路 --</option>';
+        apiList.forEach((api, index) => {
+            const opt = document.createElement('option');
+            opt.value = index;
+            opt.text = api.name;
+            sel.appendChild(opt);
+        });
     }
 
-    async function generate() {
-        const prompt = document.getElementById('prompt').value;
-        const apiKey = document.getElementById('apiKey').value;
-        const selector = document.getElementById('apiSelector').value;
-        const aspectRatio = document.getElementById('aspectRatio').value;
-        const sampleCount = parseInt(document.getElementById('sampleCount').value);
-        
-        // 決定最終目標 URL
-        let targetEndpoint = "";
-        if (selector === 'custom') {
-            targetEndpoint = document.getElementById('customUrl').value;
+    function loadApiConfig() {
+        const idx = document.getElementById('savedApis').value;
+        if (idx === "") {
+            // 清空表單以新增
+            document.getElementById('apiName').value = "";
+            document.getElementById('apiUrl').value = "";
+            document.getElementById('apiKey').value = "";
         } else {
-            targetEndpoint = URLS[selector];
+            const api = apiList[idx];
+            document.getElementById('apiName').value = api.name;
+            document.getElementById('apiUrl').value = api.url;
+            document.getElementById('apiKey').value = api.key || "";
+        }
+    }
+
+    function saveApi() {
+        const name = document.getElementById('apiName').value;
+        const url = document.getElementById('apiUrl').value;
+        const key = document.getElementById('apiKey').value;
+
+        if (!name || !url) return alert("名稱和 URL 為必填！");
+
+        const idx = document.getElementById('savedApis').value;
+        const newConfig = { name, url, key };
+
+        if (idx === "") {
+            // 新增
+            apiList.push(newConfig);
+        } else {
+            // 更新
+            apiList[idx] = newConfig;
         }
 
-        const btn = document.getElementById('btn');
+        saveToStorage();
+        renderApiSelect();
+        // 選中剛剛儲存的
+        document.getElementById('savedApis').value = (idx === "") ? apiList.length - 1 : idx;
+        alert("線路已儲存！");
+    }
+
+    function deleteApi() {
+        const idx = document.getElementById('savedApis').value;
+        if (idx === "") return;
+        if (!confirm("確定要刪除此線路嗎？")) return;
+
+        apiList.splice(idx, 1);
+        saveToStorage();
+        renderApiSelect();
+        loadApiConfig();
+    }
+
+    function saveToStorage() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(apiList));
+    }
+
+    // --- 生成邏輯 ---
+    async function generate() {
+        const url = document.getElementById('apiUrl').value;
+        const key = document.getElementById('apiKey').value;
+        const prompt = document.getElementById('prompt').value;
+        const aspectRatio = document.getElementById('aspectRatio').value;
+        const sampleCount = parseInt(document.getElementById('sampleCount').value);
+
+        const btn = document.getElementById('btnGenerate');
         const status = document.getElementById('status');
         const gallery = document.getElementById('gallery');
         const apiOut = document.getElementById('apiOutput');
 
+        if (!url) return alert("請先設定或選擇一個 API URL！");
         if (!prompt) return alert("請輸入提示詞！");
-        if (selector === 'custom' && !targetEndpoint) return alert("請輸入自定義 URL！");
 
-        // UI 鎖定
+        // UI 狀態
         btn.disabled = true;
-        status.innerText = "⏳ 連線中...";
+        status.innerText = "⏳ Requesting...";
         gallery.innerHTML = Array(sampleCount).fill('<div class="img-box"><span class="placeholder">生成中...</span></div>').join('');
-        apiOut.innerText = `Sending request to: ${targetEndpoint}...`;
+        apiOut.innerText = `Target: ${url}\nAuth: ${key ? '(Provided)' : '(None)'}\nWaiting...`;
 
         try {
-            // 發送請求到我們自己的 Node.js Proxy
-            const response = await fetch('/api/generate', {
+            // 請求我們的後端 Proxy
+            const response = await fetch('/api/proxy', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'x-target-endpoint': targetEndpoint, // 告訴後端要去哪裡
-                    'x-custom-key': apiKey // 傳遞 Key
+                    'x-target-url': url,
+                    'x-target-key': key
                 },
                 body: JSON.stringify({
                     contents: [{ parts: [{ text: prompt }] }],
@@ -188,18 +280,17 @@
             try {
                 data = JSON.parse(rawText);
             } catch(e) {
-                throw new Error("API Error (Not JSON): " + rawText.substring(0, 200));
+                throw new Error("Proxy Error (Non-JSON): " + rawText.substring(0, 300));
             }
 
-            // 更新 Debug Log
             apiOut.innerText = JSON.stringify(data, null, 2).substring(0, 5000);
             status.innerText = `HTTP ${response.status}`;
 
-            // 解析圖片
+            // 解析
             const images = [];
             if (data.candidates) {
                 data.candidates.forEach(c => {
-                    if (c.content && c.content.parts) {
+                    if (c.content?.parts) {
                         c.content.parts.forEach(p => {
                             if (p.inlineData?.data) images.push(p.inlineData.data);
                             else if (p.text) {
@@ -211,25 +302,25 @@
                 });
             }
 
-            // 顯示結果
+            // 渲染
             if (images.length > 0) {
                 gallery.innerHTML = images.map(b64 => `
                     <div class="img-box">
-                        <img src="data:image/png;base64,${b64}" onclick="window.open(this.src)" title="點擊放大" />
+                        <img src="data:image/png;base64,${b64}" onclick="window.open(this.src)" title="Open Full Size" />
                     </div>
                 `).join('');
-                status.innerText = `✅ 成功生成 ${images.length} 張`;
+                status.innerText = `✅ Success: ${images.length} images`;
                 status.style.color = "#4ade80";
             } else {
-                gallery.innerHTML = `<div class="img-box" style="border:1px solid red"><span class="placeholder" style="color:red">無圖片數據</span></div>`;
-                status.innerText = "⚠️ 失敗：API 未回傳圖片";
-                status.style.color = "#fbbf24";
+                gallery.innerHTML = `<div class="img-box" style="border-color:#f59e0b"><span class="placeholder" style="color:#f59e0b">無圖片回傳</span></div>`;
+                status.innerText = "⚠️ No Image Data Found";
+                status.style.color = "#f59e0b";
             }
 
         } catch (e) {
-            status.innerText = "❌ 錯誤";
+            status.innerText = "❌ Error";
             status.style.color = "#ef4444";
-            apiOut.innerText = e.stack;
+            apiOut.innerText += `\n\nERROR: ${e.message}`;
         } finally {
             btn.disabled = false;
         }
