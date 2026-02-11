@@ -1,52 +1,3 @@
-<!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gemini 3 Pro Image Tool (Zeabur)</title>
-    <style>
-        body { font-family: -apple-system, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; background: #1a1a1a; color: #fff; }
-        .container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .card { background: #2d2d2d; padding: 20px; border-radius: 12px; }
-        textarea { width: 100%; height: 100px; background: #333; border: 1px solid #444; color: #fff; padding: 10px; border-radius: 6px; box-sizing: border-box; }
-        button { background: #0070f3; color: white; border: none; padding: 12px; width: 100%; border-radius: 6px; cursor: pointer; margin-top: 10px; font-weight: bold; }
-        button:hover { background: #0051a2; }
-        button:disabled { background: #444; cursor: wait; }
-        img { width: 100%; border-radius: 8px; display: none; margin-top: 10px; }
-        pre { background: #111; padding: 10px; border-radius: 6px; overflow-x: auto; font-size: 12px; color: #0f0; max-height: 400px; overflow-y: auto; }
-        .label { font-size: 0.8rem; color: #888; margin-bottom: 5px; display: block; }
-        
-        @media (max-width: 700px) { .container { grid-template-columns: 1fr; } }
-    </style>
-</head>
-<body>
-    <h1>🚀 Gemini 3 Pro 圖像生成器</h1>
-    
-    <div class="container">
-        <!-- 左側：控制面板 -->
-        <div class="card">
-            <span class="label">提示詞 (Prompt)</span>
-            <textarea id="prompt" placeholder="例如：A futuristic city made of crystal, 8k resolution...">Cyberpunk street at night, neon lights, realistic, 8k</textarea>
-            
-            <button id="btn" onclick="generate()">生成圖片 (Generate)</button>
-            
-            <div id="status" style="margin-top:10px; color: #aaa;">準備就緒</div>
-        </div>
-
-        <!-- 右側：結果展示 -->
-        <div class="card">
-            <span class="label">生成結果</span>
-            <img id="outputImage" alt="Generated Image" />
-        </div>
-    </div>
-
-    <!-- 底部：API 原始輸出 (Debug) -->
-    <div class="card" style="margin-top: 20px;">
-        <span class="label">API 完整回應 (Debug Info)</span>
-        <pre id="apiOutput">// 這裡將顯示完整的 API JSON 回應...</pre>
-    </div>
-
-    <script>
         async function generate() {
             const prompt = document.getElementById('prompt').value;
             const btn = document.getElementById('btn');
@@ -63,7 +14,6 @@
             apiOut.innerText = "Loading...";
 
             try {
-                // 發送到我們自己的後端 (server.js)
                 const response = await fetch('/api/generate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -76,19 +26,44 @@
                     })
                 });
 
-                const data = await response.json();
+                // 處理非 JSON 的錯誤 (例如 502/404 HTML 頁面)
+                const rawText = await response.text();
+                let data;
+                try {
+                    data = JSON.parse(rawText);
+                } catch (e) {
+                    throw new Error("API 回傳了非 JSON 內容 (可能是錯誤頁面):\n" + rawText.substring(0, 200));
+                }
                 
-                // 顯示原始 JSON
+                // 顯示原始 JSON (Debug 用)
                 apiOut.innerText = JSON.stringify(data, null, 2);
                 status.innerText = `請求完成 (Status: ${response.status})`;
 
-                // 嘗試解析圖片
-                if (data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data) {
-                    const b64 = data.candidates[0].content.parts[0].inlineData.data;
+                // 🎯 核心修正：增強圖片解析邏輯
+                let b64 = null;
+                const part = data.candidates?.[0]?.content?.parts?.[0];
+
+                if (part) {
+                    if (part.inlineData && part.inlineData.data) {
+                        // 情況 A: 標準 Gemini 格式
+                        b64 = part.inlineData.data;
+                    } else if (part.text) {
+                        // 情況 B: Markdown 格式 (你的 paste.txt 屬於這種)
+                        // 尋找 base64 字串
+                        const match = part.text.match(/data:image\/png;base64,([^"\)\s]+)/);
+                        if (match && match[1]) {
+                            b64 = match[1];
+                        }
+                    }
+                }
+
+                if (b64) {
                     img.src = `data:image/png;base64,${b64}`;
                     img.style.display = 'block';
+                    status.innerText = "✅ 圖片生成成功！";
                 } else {
-                    status.innerText = "⚠️ 生成失敗或無圖片數據";
+                    status.innerText = "⚠️ 生成成功，但無法解析圖片數據";
+                    console.error("無法解析的 Part 結構:", part);
                 }
 
             } catch (e) {
@@ -98,6 +73,3 @@
                 btn.disabled = false;
             }
         }
-    </script>
-</body>
-</html>
