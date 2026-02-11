@@ -3,163 +3,238 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gemini 3 Pro Image Generator</title>
+    <title>Gemini 3 Image Station v2.2</title>
     <style>
-        :root { --bg: #121212; --card-bg: #1e1e1e; --primary: #3b82f6; --text: #e5e5e5; }
-        body { font-family: system-ui, -apple-system, sans-serif; max-width: 1000px; margin: 0 auto; padding: 2rem; background: var(--bg); color: var(--text); }
-        h1 { text-align: center; margin-bottom: 2rem; background: linear-gradient(90deg, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
-        .card { background: var(--card-bg); padding: 1.5rem; border-radius: 1rem; border: 1px solid #333; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3); }
-        .label { display: block; font-size: 0.875rem; color: #888; margin-bottom: 0.5rem; font-weight: 500; }
-        textarea { width: 100%; height: 120px; background: #2d2d2d; border: 1px solid #404040; color: white; padding: 1rem; border-radius: 0.5rem; resize: none; font-size: 1rem; box-sizing: border-box; }
-        textarea:focus { outline: 2px solid var(--primary); border-color: transparent; }
-        button { background: var(--primary); color: white; border: none; padding: 1rem; width: 100%; border-radius: 0.5rem; font-weight: 600; cursor: pointer; margin-top: 1rem; transition: opacity 0.2s; }
-        button:hover { opacity: 0.9; }
-        button:disabled { background: #4b5563; cursor: not-allowed; opacity: 0.7; }
-        #status { margin-top: 1rem; font-size: 0.9rem; text-align: center; min-height: 1.2em; }
+        :root { --bg: #0b1120; --card: #1e293b; --primary: #3b82f6; --text: #f8fafc; --border: #334155; }
+        body { font-family: system-ui, -apple-system, sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; background: var(--bg); color: var(--text); }
         
-        /* 圖片容器 */
-        .img-container { min-height: 300px; display: flex; align-items: center; justify-content: center; background: #000; border-radius: 0.5rem; overflow: hidden; position: relative; }
-        img { max-width: 100%; display: none; }
-        .placeholder { color: #555; font-size: 0.9rem; }
-        
-        /* Debug 區域 */
-        details { margin-top: 2rem; background: #1a1a1a; border-radius: 0.5rem; padding: 0.5rem; }
-        summary { cursor: pointer; color: #888; padding: 0.5rem; user-select: none; }
-        pre { background: #000; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; font-size: 0.75rem; color: #0f0; max-height: 300px; margin: 0.5rem 0 0 0; white-space: pre-wrap; word-break: break-all; }
+        /* 標題與版本 */
+        header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 24px; border-bottom: 1px solid var(--border); padding-bottom: 16px; }
+        h1 { margin: 0; background: linear-gradient(to right, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .version { font-size: 0.8rem; color: #64748b; font-family: monospace; }
 
-        @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+        /* 主佈局 */
+        .grid-container { display: grid; grid-template-columns: 360px 1fr; gap: 24px; }
+        
+        /* 卡片共用樣式 */
+        .panel { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3); }
+        
+        /* 表單元件 */
+        .form-group { margin-bottom: 16px; }
+        label { display: block; font-size: 0.8rem; color: #94a3b8; margin-bottom: 6px; font-weight: 600; letter-spacing: 0.5px; }
+        input, select, textarea { width: 100%; background: #0f172a; border: 1px solid var(--border); color: white; padding: 10px; border-radius: 6px; box-sizing: border-box; font-size: 0.9rem; transition: border-color 0.2s; }
+        input:focus, select:focus, textarea:focus { border-color: var(--primary); outline: none; }
+        textarea { height: 110px; resize: vertical; line-height: 1.5; }
+
+        /* 按鈕 */
+        .btn-primary { background: var(--primary); color: white; border: none; padding: 12px; width: 100%; border-radius: 6px; font-weight: 700; cursor: pointer; margin-top: 8px; }
+        .btn-primary:hover { filter: brightness(1.1); }
+        .btn-primary:disabled { background: #475569; cursor: not-allowed; opacity: 0.8; }
+
+        /* 右側畫廊 */
+        .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; min-height: 200px; }
+        .img-box { background: #000; border-radius: 8px; overflow: hidden; aspect-ratio: 16/9; position: relative; border: 1px solid #333; display: flex; align-items: center; justify-content: center; }
+        .img-box img { width: 100%; height: 100%; object-fit: contain; cursor: zoom-in; }
+        .placeholder { color: #475569; font-size: 0.9rem; }
+
+        /* Debug 區域 */
+        details { margin-top: 24px; background: #000; border: 1px solid #333; border-radius: 8px; }
+        summary { padding: 12px; color: #64748b; cursor: pointer; font-family: monospace; font-size: 0.8rem; }
+        pre { margin: 0; padding: 16px; color: #4ade80; font-size: 0.75rem; overflow-x: auto; max-height: 300px; }
+
+        @media (max-width: 800px) { .grid-container { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
-    <h1>✨ Gemini 3 Pro 圖像生成</h1>
-    
-    <div class="grid">
-        <!-- 輸入區 -->
-        <div class="card">
-            <label class="label">提示詞 (Prompt)</label>
-            <textarea id="prompt" placeholder="描述你想生成的畫面...&#10;例：A futuristic cyberpunk city, neon lights, rain, 8k resolution">Cyberpunk street at night, neon lights, realistic, 8k</textarea>
-            <button id="btn" onclick="generate()">生成圖片 (Generate)</button>
-            <div id="status">準備就緒</div>
-        </div>
 
-        <!-- 結果區 -->
-        <div class="card">
-            <label class="label">預覽結果</label>
-            <div class="img-container">
-                <span class="placeholder" id="placeholder">等待生成...</span>
-                <img id="outputImage" alt="Generated Result" />
+<header>
+    <h1>Gemini 3 Image Station</h1>
+    <span class="version">v2.2 API Selector</span>
+</header>
+
+<div class="grid-container">
+    <!-- 左側：設定面板 -->
+    <div class="panel">
+        
+        <!-- 1. API 設定區 -->
+        <div style="background: #0f172a; padding: 12px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #334155;">
+            <div class="form-group">
+                <label>📡 選擇 API 線路</label>
+                <select id="apiSelector" onchange="toggleCustomUrl()">
+                    <option value="default">預設 (Appmedo Proxy)</option>
+                    <option value="official">Google Official (需 API Key)</option>
+                    <option value="custom">自定義 URL...</option>
+                </select>
+            </div>
+            
+            <!-- 自定義 URL 輸入框 (預設隱藏) -->
+            <div class="form-group" id="customUrlGroup" style="display:none;">
+                <label>自定義 API URL</label>
+                <input type="text" id="customUrl" placeholder="https://..." />
+            </div>
+
+            <div class="form-group">
+                <label>🔑 API Key (選填)</label>
+                <input type="password" id="apiKey" placeholder="AIzaSy..." />
             </div>
         </div>
+
+        <!-- 2. 生成參數區 -->
+        <div class="form-group">
+            <label>🎨 提示詞 (Prompt)</label>
+            <textarea id="prompt" placeholder="描述畫面細節...">Cyberpunk city, neon lights, 8k resolution, realistic</textarea>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+                <label>比例</label>
+                <select id="aspectRatio">
+                    <option value="16:9">16:9 橫向</option>
+                    <option value="1:1">1:1 正方</option>
+                    <option value="9:16">9:16 直向</option>
+                    <option value="4:3">4:3 標準</option>
+                    <option value="3:4">3:4 人像</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>數量</label>
+                <select id="sampleCount">
+                    <option value="1">1 張</option>
+                    <option value="2">2 張</option>
+                    <option value="4">4 張</option>
+                </select>
+            </div>
+        </div>
+
+        <button id="btn" class="btn-primary" onclick="generate()">🚀 開始生成</button>
+        <div id="status" style="text-align: center; margin-top: 12px; font-size: 0.85rem; color: #94a3b8;">等待指令...</div>
     </div>
 
-    <!-- Debug 區 -->
-    <details>
-        <summary>🛠️ 開發者資訊 (API Response)</summary>
-        <pre id="apiOutput">// API 回應將顯示於此...</pre>
-    </details>
+    <!-- 右側：展示面板 -->
+    <div class="panel">
+        <label>🖼️ 生成結果</label>
+        <div id="gallery" class="gallery">
+            <div class="img-box"><span class="placeholder">圖片將顯示於此</span></div>
+        </div>
+    </div>
+</div>
 
-    <script>
-        async function generate() {
-            const prompt = document.getElementById('prompt').value;
-            const btn = document.getElementById('btn');
-            const status = document.getElementById('status');
-            const img = document.getElementById('outputImage');
-            const placeholder = document.getElementById('placeholder');
-            const apiOut = document.getElementById('apiOutput');
+<details>
+    <summary>🛠️ 開發者除錯 (Debug Log)</summary>
+    <pre id="apiOutput">// API 回應將顯示於此...</pre>
+</details>
 
-            if (!prompt) return;
+<script>
+    // 預定義的 URL 常量
+    const URLS = {
+        default: "https://api-integrations.appmedo.com/app-7r29gu4xs001/api-Xa6JZ58oPMEa/v1beta/models/gemini-3-pro-image-preview:generateContent",
+        official: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+    };
 
-            // 1. UI 鎖定與重置
-            btn.disabled = true;
-            status.innerText = "⏳ 正在請求 API (這可能需要 10-20 秒)...";
-            status.style.color = "#ccc";
-            img.style.display = 'none';
-            placeholder.style.display = 'block';
-            placeholder.innerText = "正在繪圖中...";
-            apiOut.innerText = "Waiting for response...";
+    function toggleCustomUrl() {
+        const val = document.getElementById('apiSelector').value;
+        document.getElementById('customUrlGroup').style.display = (val === 'custom') ? 'block' : 'none';
+    }
 
-            try {
-                // 2. 發送請求
-                const response = await fetch('/api/generate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: prompt }] }],
-                        generationConfig: {
-                            responseModalities: ["IMAGE"],
-                            imageConfig: { aspectRatio: "16:9", imageCount: 1 }
-                        }
-                    })
-                });
-
-                // 3. 處理回應數據
-                const rawText = await response.text();
-                let data;
-
-                try {
-                    data = JSON.parse(rawText);
-                } catch (e) {
-                    throw new Error(`API 回傳了非 JSON 格式 (可能是 HTML 錯誤頁): \n${rawText.substring(0, 300)}...`);
-                }
-
-                // 更新 Debug 面板 (截斷過長的 Base64 以免瀏覽器卡死)
-                const debugJson = JSON.stringify(data, null, 2);
-                apiOut.innerText = debugJson.length > 5000 
-                    ? debugJson.substring(0, 5000) + "\n... (內容過長已截斷)" 
-                    : debugJson;
-
-                status.innerText = `伺服器回應: ${response.status}`;
-
-                // 4. 智能解析圖片數據
-                let b64 = null;
-                const part = data.candidates?.[0]?.content?.parts?.[0];
-
-                if (part) {
-                    if (part.inlineData && part.inlineData.data) {
-                        // 情況 A: 標準格式
-                        console.log("模式: 標準 inlineData");
-                        b64 = part.inlineData.data;
-                    } else if (part.text) {
-                        // 情況 B: Markdown 格式
-                        console.log("模式: Markdown text");
-                        // 使用通用正則提取 Base64
-                        const match = part.text.match(/data:image\/[^;]+;base64,([A-Za-z0-9+/=]+)/);
-                        if (match && match[1]) b64 = match[1];
-                    }
-                }
-
-                // 5. 渲染圖片
-                if (b64 && b64.length > 100) {
-                    img.onload = () => {
-                        status.innerText = `✅ 生成成功！(${img.naturalWidth}x${img.naturalHeight})`;
-                        status.style.color = "#4ade80"; // Green
-                        placeholder.style.display = 'none';
-                        img.style.display = 'block';
-                    };
-                    img.onerror = () => {
-                        status.innerText = "❌ 圖片解碼失敗 (Base64 損壞)";
-                        status.style.color = "#ef4444"; // Red
-                    };
-                    
-                    // 設定圖片源 (強制 PNG 頭)
-                    img.src = `data:image/png;base64,${b64}`;
-                } else {
-                    status.innerText = "⚠️ API 回應正常但未找到圖片數據";
-                    status.style.color = "#f59e0b"; // Orange
-                    placeholder.innerText = "無圖片數據";
-                    console.error("解析失敗，數據結構:", part);
-                }
-
-            } catch (e) {
-                status.innerText = "❌ 發生錯誤";
-                status.style.color = "#ef4444";
-                apiOut.innerText = `Error: ${e.message}\n\nStack:\n${e.stack}`;
-                console.error(e);
-            } finally {
-                btn.disabled = false;
-            }
+    async function generate() {
+        const prompt = document.getElementById('prompt').value;
+        const apiKey = document.getElementById('apiKey').value;
+        const selector = document.getElementById('apiSelector').value;
+        const aspectRatio = document.getElementById('aspectRatio').value;
+        const sampleCount = parseInt(document.getElementById('sampleCount').value);
+        
+        // 決定最終目標 URL
+        let targetEndpoint = "";
+        if (selector === 'custom') {
+            targetEndpoint = document.getElementById('customUrl').value;
+        } else {
+            targetEndpoint = URLS[selector];
         }
-    </script>
+
+        const btn = document.getElementById('btn');
+        const status = document.getElementById('status');
+        const gallery = document.getElementById('gallery');
+        const apiOut = document.getElementById('apiOutput');
+
+        if (!prompt) return alert("請輸入提示詞！");
+        if (selector === 'custom' && !targetEndpoint) return alert("請輸入自定義 URL！");
+
+        // UI 鎖定
+        btn.disabled = true;
+        status.innerText = "⏳ 連線中...";
+        gallery.innerHTML = Array(sampleCount).fill('<div class="img-box"><span class="placeholder">生成中...</span></div>').join('');
+        apiOut.innerText = `Sending request to: ${targetEndpoint}...`;
+
+        try {
+            // 發送請求到我們自己的 Node.js Proxy
+            const response = await fetch('/api/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-target-endpoint': targetEndpoint, // 告訴後端要去哪裡
+                    'x-custom-key': apiKey // 傳遞 Key
+                },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }] }],
+                    generationConfig: {
+                        responseModalities: ["IMAGE"],
+                        imageConfig: { aspectRatio, imageCount: sampleCount }
+                    }
+                })
+            });
+
+            const rawText = await response.text();
+            let data;
+            try {
+                data = JSON.parse(rawText);
+            } catch(e) {
+                throw new Error("API Error (Not JSON): " + rawText.substring(0, 200));
+            }
+
+            // 更新 Debug Log
+            apiOut.innerText = JSON.stringify(data, null, 2).substring(0, 5000);
+            status.innerText = `HTTP ${response.status}`;
+
+            // 解析圖片
+            const images = [];
+            if (data.candidates) {
+                data.candidates.forEach(c => {
+                    if (c.content && c.content.parts) {
+                        c.content.parts.forEach(p => {
+                            if (p.inlineData?.data) images.push(p.inlineData.data);
+                            else if (p.text) {
+                                const m = p.text.match(/data:image\/[^;]+;base64,([A-Za-z0-9+/=]+)/);
+                                if (m) images.push(m[1]);
+                            }
+                        });
+                    }
+                });
+            }
+
+            // 顯示結果
+            if (images.length > 0) {
+                gallery.innerHTML = images.map(b64 => `
+                    <div class="img-box">
+                        <img src="data:image/png;base64,${b64}" onclick="window.open(this.src)" title="點擊放大" />
+                    </div>
+                `).join('');
+                status.innerText = `✅ 成功生成 ${images.length} 張`;
+                status.style.color = "#4ade80";
+            } else {
+                gallery.innerHTML = `<div class="img-box" style="border:1px solid red"><span class="placeholder" style="color:red">無圖片數據</span></div>`;
+                status.innerText = "⚠️ 失敗：API 未回傳圖片";
+                status.style.color = "#fbbf24";
+            }
+
+        } catch (e) {
+            status.innerText = "❌ 錯誤";
+            status.style.color = "#ef4444";
+            apiOut.innerText = e.stack;
+        } finally {
+            btn.disabled = false;
+        }
+    }
+</script>
+
 </body>
 </html>
