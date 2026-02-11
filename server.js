@@ -1,61 +1,57 @@
 const express = require('express');
 const cors = require('cors');
 const fetch = require('node-fetch');
-const path = require('path');
-
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// 目標 API URL (Appmedo Gemini 3 Proxy)
-const TARGET_API_URL = "https://api-integrations.appmedo.com/app-7r29gu4xs001/api-Xa6JZ58oPMEa/v1beta/models/gemini-3-pro-image-preview:generateContent";
+// 預設線路列表 (後端備份用，主要邏輯在前端傳過來)
+const DEFAULT_URL = "https://api-integrations.appmedo.com/app-7r29gu4xs001/api-Xa6JZ58oPMEa/v1beta/models/gemini-3-pro-image-preview:generateContent";
 
 app.use(cors());
-// 增加 payload 限制以支援大圖片請求（雖然通常請求不大，但回應很大）
-app.use(express.json({ limit: '10mb' }));
-app.use(express.static('public')); // 託管 public 資料夾中的網頁
+app.use(express.json({ limit: '50mb' })); // 增大限制以防多圖回傳爆掉
+app.use(express.static('public'));
 
-// API Proxy Endpoint
 app.post('/api/generate', async (req, res) => {
-    console.log(`[${new Date().toISOString()}] 收到生成請求`);
+    // 1. 獲取前端指定的目標 URL
+    // 如果前端沒傳 x-target-endpoint，就用後端寫死的預設值
+    let targetUrl = req.headers['x-target-endpoint'] || DEFAULT_URL;
+    let customKey = req.headers['x-custom-key'];
+
+    console.log(`[Proxy] Target: ${targetUrl.substring(0, 50)}...`);
+
+    // 2. 處理 API Key (如果是官方 URL，需要拼接到 query string)
+    if (customKey && targetUrl.includes('googleapis.com')) {
+        // 如果 URL 已經有參數用 &，沒有用 ?
+        const separator = targetUrl.includes('?') ? '&' : '?';
+        targetUrl = `${targetUrl}${separator}key=${customKey}`;
+    }
 
     try {
-        const response = await fetch(TARGET_API_URL, {
+        const response = await fetch(targetUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                // 偽裝 Header 避免簡單的反爬蟲
-                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Referer': 'https://appmedo.com/'
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Chrome/120.0.0.0 Safari/537.36'
             },
             body: JSON.stringify(req.body)
         });
 
-        // 先讀取文本，避免直接 .json() 解析失敗
         const rawText = await response.text();
-        console.log(`目標伺服器回應狀態: ${response.status}`);
+        console.log(`[Proxy] Status: ${response.status}`);
 
         try {
-            // 嘗試解析為 JSON
             const jsonData = JSON.parse(rawText);
             res.status(response.status).json(jsonData);
-        } catch (parseError) {
-            // 解析失敗，說明回傳的是 HTML 錯誤頁面 (如 404, 502, Cloudflare 驗證等)
-            console.error("解析 JSON 失敗，原始回應預覽:", rawText.substring(0, 200));
-            
+        } catch (e) {
             res.status(502).json({
-                error: "Upstream API Error (Non-JSON Response)",
+                error: "Non-JSON Response",
                 status: response.status,
-                details: "The target API returned HTML instead of JSON. It might be down or blocking requests.",
-                raw_preview: rawText.substring(0, 1000) // 回傳部分 HTML 供前端 Debug
+                raw_preview: rawText.substring(0, 1000)
             });
         }
-
     } catch (error) {
-        console.error("Proxy 內部錯誤:", error);
-        res.status(500).json({ error: "Internal Proxy Error", details: error.message });
+        res.status(500).json({ error: error.message });
     }
 });
 
-app.listen(PORT, () => {
-    console.log(`🚀 Server is running on port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`🚀 Server running on ${PORT}`));
