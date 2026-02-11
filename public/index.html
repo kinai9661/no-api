@@ -3,31 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gemini 3 Pro - Ultimate Station</title>
+    <title>Gemini 3 Pro - Stable Station</title>
     <style>
         :root { --bg: #0f172a; --card: #1e293b; --primary: #3b82f6; --danger: #ef4444; --text: #f1f5f9; --border: #334155; }
-        body { font-family: system-ui, -apple-system, sans-serif; max-width: 1400px; margin: 0 auto; padding: 20px; background: var(--bg); color: var(--text); }
+        body { font-family: system-ui, -apple-system, sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; background: var(--bg); color: var(--text); }
         
-        /* Layout */
+        /* 標題 */
         header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 15px; }
         h1 { font-size: 1.5rem; margin: 0; background: linear-gradient(90deg, #60a5fa, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .grid { display: grid; grid-template-columns: 380px 1fr; gap: 24px; }
         
-        /* Components */
+        /* 佈局 */
+        .grid { display: grid; grid-template-columns: 350px 1fr; gap: 24px; }
         .panel { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); display: flex; flex-direction: column; gap: 16px; }
         .section-title { font-size: 0.85rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #333; padding-bottom: 8px; margin-bottom: 8px; }
         
-        /* API Manager */
+        /* 輸入區 */
         .api-manager { background: #0b1120; border: 1px solid #475569; padding: 15px; border-radius: 8px; }
         .row { display: flex; gap: 10px; margin-bottom: 10px; }
-        
-        /* Forms */
         label { font-size: 0.8rem; color: #cbd5e1; margin-bottom: 4px; display: block; }
         input, select, textarea { width: 100%; background: #1e293b; border: 1px solid var(--border); color: white; padding: 10px; border-radius: 6px; font-size: 0.9rem; box-sizing: border-box; }
         input:focus, textarea:focus, select:focus { border-color: var(--primary); outline: none; }
-        textarea { height: 100px; resize: vertical; }
+        textarea { height: 120px; resize: vertical; }
         
-        /* Buttons */
+        /* 按鈕 */
         .btn { padding: 10px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: filter 0.2s; }
         .btn-primary { background: var(--primary); color: white; width: 100%; }
         .btn-save { background: #10b981; color: white; flex: 1; }
@@ -35,61 +33,59 @@
         .btn:hover { filter: brightness(1.15); }
         .btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
-        /* Gallery */
-        .gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
-        .img-box { aspect-ratio: 16/9; background: #000; border: 1px solid #333; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; position: relative; }
-        .img-box img { width: 100%; height: 100%; object-fit: contain; cursor: zoom-in; }
-        .img-label { position: absolute; bottom: 5px; right: 5px; background: rgba(0,0,0,0.7); color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; pointer-events: none; }
+        /* 結果展示 */
+        .preview-area { min-height: 300px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #000; border: 1px solid #333; border-radius: 8px; padding: 10px; }
+        img { max-width: 100%; max-height: 500px; object-fit: contain; display: none; border-radius: 4px; cursor: pointer; }
         .placeholder { color: #64748b; font-size: 0.9rem; }
 
-        /* Info Card */
+        /* 詳細資訊卡 */
         .info-card { background: #0b1120; padding: 12px; border-radius: 6px; border: 1px solid #334155; margin-top: 16px; font-family: monospace; font-size: 0.8rem; }
         .info-row { display: flex; justify-content: space-between; margin-bottom: 8px; border-bottom: 1px solid #1e293b; padding-bottom: 8px; }
         .info-label { color: #94a3b8; font-weight: bold; }
         .info-value { color: #60a5fa; word-break: break-all; text-align: right; max-width: 70%; }
 
-        /* Debug */
+        /* Debug Log */
         details { margin-top: 20px; background: #000; border-radius: 8px; }
         summary { padding: 10px; color: #64748b; font-family: monospace; cursor: pointer; }
         pre { color: #22c55e; padding: 15px; margin: 0; overflow: auto; max-height: 200px; font-size: 0.8rem; }
 
-        @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+        @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
 
 <header>
-    <h1>Gemini 3 Pro Controller</h1>
-    <div style="font-size: 0.8rem; color: #64748b;">v3.2 Multi-Image Fix</div>
+    <h1>Gemini 3 Pro Station</h1>
+    <div style="font-size: 0.8rem; color: #64748b;">v3.3 Stable</div>
 </header>
 
 <div class="grid">
-    <!-- 左側：控制面板 -->
+    <!-- 左側：設定區 -->
     <div class="panel">
         
-        <!-- API 管理區 -->
+        <!-- API 管理 -->
         <div class="api-manager">
             <div class="section-title">📡 線路設定 (Endpoints)</div>
             <div class="form-group">
-                <label>已存線路</label>
+                <label>選擇線路</label>
                 <div class="row">
                     <select id="savedApis" onchange="loadApiConfig()">
-                        <option value="">-- 選擇或新增 --</option>
+                        <option value="">-- 新增 --</option>
                     </select>
-                    <button class="btn btn-del" onclick="deleteApi()" title="刪除">🗑️</button>
+                    <button class="btn btn-del" onclick="deleteApi()">🗑️</button>
                 </div>
             </div>
-            <div style="margin-bottom:10px;"><label>名稱</label><input type="text" id="apiName" placeholder="My Proxy" /></div>
-            <div style="margin-bottom:10px;"><label>URL</label><input type="text" id="apiUrl" placeholder="https://..." /></div>
-            <div style="margin-bottom:10px;"><label>Key (選填)</label><input type="password" id="apiKey" placeholder="AIzaSy..." /></div>
-            <button class="btn btn-save" style="width:100%" onclick="saveApi()">💾 儲存 / 更新</button>
+            <div style="margin-bottom:8px"><label>名稱</label><input type="text" id="apiName" placeholder="My Proxy" /></div>
+            <div style="margin-bottom:8px"><label>URL</label><input type="text" id="apiUrl" placeholder="https://..." /></div>
+            <div style="margin-bottom:8px"><label>Key</label><input type="password" id="apiKey" placeholder="(選填)" /></div>
+            <button class="btn btn-save" style="width:100%" onclick="saveApi()">💾 儲存設定</button>
         </div>
 
         <!-- 參數區 -->
         <div>
-            <div class="section-title">🎨 生成參數</div>
+            <div class="section-title">🎨 參數</div>
             <label>提示詞 (Prompt)</label>
-            <textarea id="prompt">Cyberpunk city, neon lights, 8k, realistic</textarea>
+            <textarea id="prompt">Cyberpunk city, neon lights, 8k</textarea>
         </div>
         
         <div class="row">
@@ -100,158 +96,104 @@
                     <option value="1:1">1:1</option>
                     <option value="9:16">9:16</option>
                     <option value="4:3">4:3</option>
-                    <option value="3:4">3:4</option>
                 </select>
             </div>
-            <div style="flex:1">
-                <label>數量</label>
-                <select id="sampleCount">
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="4">4</option>
-                </select>
-            </div>
+            <!-- 隱藏數量選擇，固定為 1 -->
         </div>
 
-        <button id="btnGenerate" class="btn btn-primary" onclick="generate()">🚀 開始生成</button>
+        <button id="btnGenerate" class="btn btn-primary" onclick="generate()">🚀 生成圖片</button>
         <div id="status" style="text-align:center; margin-top:10px; color:#94a3b8; font-size:0.85rem;">Ready</div>
     </div>
 
-    <!-- 右側：結果展示 -->
+    <!-- 右側：結果區 -->
     <div class="panel">
         <div class="section-title">🖼️ 結果預覽</div>
-        <div id="gallery" class="gallery">
-            <div class="img-box"><span class="placeholder">圖片將顯示於此</span></div>
+        
+        <div class="preview-area">
+            <span class="placeholder" id="placeholder">等待生成...</span>
+            <img id="resultImage" onclick="window.open(this.src)" title="點擊在新分頁開啟" />
         </div>
 
-        <!-- 資訊面板 -->
+        <!-- API 詳細資訊 -->
         <div class="info-card">
-            <div class="section-title" style="border:none; margin:0 0 8px 0; color:#3b82f6;">📊 Transaction Details</div>
-            <div class="info-row"><span class="info-label">Target URL:</span><span class="info-value" id="dispTarget">N/A</span></div>
-            <div class="info-row"><span class="info-label">Auth Key:</span><span class="info-value" id="dispKey">None</span></div>
-            <div class="info-row"><span class="info-label">Images Found:</span><span class="info-value" id="dispCount">0</span></div>
-            <div class="info-row" style="border:none;"><span class="info-label">Response Size:</span><span class="info-value" id="dispSize">0 KB</span></div>
+            <div class="section-title" style="border:none; margin:0 0 8px 0; color:#3b82f6;">📊 API Transaction Details</div>
+            
+            <div class="info-row">
+                <span class="info-label">Request Target:</span>
+                <span class="info-value" id="dispTarget">N/A</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Auth Key Status:</span>
+                <span class="info-value" id="dispKey">None</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Response Status:</span>
+                <span class="info-value" id="dispStatus">-</span>
+            </div>
+            <div class="info-row" style="border:none;">
+                <span class="info-label">Payload Size:</span>
+                <span class="info-value" id="dispSize">0 KB</span>
+            </div>
         </div>
     </div>
 </div>
 
 <details>
     <summary>🛠️ Raw API Output</summary>
-    <pre id="apiOutput">// Log...</pre>
+    <pre id="apiOutput">// Waiting...</pre>
 </details>
 
 <script>
-    // --- 1. API 管理邏輯 ---
+    // --- API 管理 (保持不變) ---
     const STORAGE_KEY = 'gemini_api_configs_v3';
     let apiList = [];
-
     window.onload = () => {
         const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-            apiList = JSON.parse(stored);
-        } else {
-            apiList = [{
-                name: "Example Appmedo",
-                url: "https://api-integrations.appmedo.com/app-7r29gu4xs001/api-Xa6JZ58oPMEa/v1beta/models/gemini-3-pro-image-preview:generateContent",
-                key: ""
-            }];
-            saveToStorage();
-        }
+        if (stored) { apiList = JSON.parse(stored); } 
+        else { apiList = [{name: "Default Appmedo", url: "https://api-integrations.appmedo.com/app-7r29gu4xs001/api-Xa6JZ58oPMEa/v1beta/models/gemini-3-pro-image-preview:generateContent", key: ""}]; saveToStorage(); }
         renderApiSelect();
-        // 預設選中第一個
-        if(apiList.length > 0) {
-            document.getElementById('savedApis').value = 0;
-            loadApiConfig();
-        }
+        if(apiList.length > 0) { document.getElementById('savedApis').value = 0; loadApiConfig(); }
     };
-
-    function renderApiSelect() {
-        const sel = document.getElementById('savedApis');
-        sel.innerHTML = '<option value="">-- 新增線路 --</option>';
-        apiList.forEach((api, idx) => {
-            const opt = document.createElement('option');
-            opt.value = idx;
-            opt.text = api.name;
-            sel.appendChild(opt);
-        });
-    }
-
-    function loadApiConfig() {
-        const idx = document.getElementById('savedApis').value;
-        if (idx === "") {
-            document.getElementById('apiName').value = "";
-            document.getElementById('apiUrl').value = "";
-            document.getElementById('apiKey').value = "";
-        } else {
-            const api = apiList[idx];
-            document.getElementById('apiName').value = api.name;
-            document.getElementById('apiUrl').value = api.url;
-            document.getElementById('apiKey').value = api.key || "";
-        }
-    }
-
-    function saveApi() {
-        const name = document.getElementById('apiName').value;
-        const url = document.getElementById('apiUrl').value;
-        const key = document.getElementById('apiKey').value;
-        const idx = document.getElementById('savedApis').value;
-
-        if (!name || !url) return alert("名稱和 URL 為必填！");
-
-        const newConfig = { name, url, key };
-        if (idx === "") apiList.push(newConfig);
-        else apiList[idx] = newConfig;
-
-        saveToStorage();
-        renderApiSelect();
-        document.getElementById('savedApis').value = (idx==="") ? apiList.length-1 : idx;
-        alert("已儲存");
-    }
-
-    function deleteApi() {
-        const idx = document.getElementById('savedApis').value;
-        if (idx === "") return;
-        if(confirm("確定刪除？")) {
-            apiList.splice(idx, 1);
-            saveToStorage();
-            renderApiSelect();
-            loadApiConfig();
-        }
-    }
-
+    function renderApiSelect() { const sel=document.getElementById('savedApis'); sel.innerHTML='<option value="">-- 新增 --</option>'; apiList.forEach((a,i)=>{const o=document.createElement('option');o.value=i;o.text=a.name;sel.appendChild(o)}); }
+    function loadApiConfig() { const idx=document.getElementById('savedApis').value; if(idx===""){document.getElementById('apiName').value="";document.getElementById('apiUrl').value="";document.getElementById('apiKey').value="";}else{const a=apiList[idx];document.getElementById('apiName').value=a.name;document.getElementById('apiUrl').value=a.url;document.getElementById('apiKey').value=a.key||"";} }
+    function saveApi() { const n=document.getElementById('apiName').value,u=document.getElementById('apiUrl').value,k=document.getElementById('apiKey').value,idx=document.getElementById('savedApis').value; if(!n||!u)return alert("必填"); const c={name:n,url:u,key:k}; if(idx===""){apiList.push(c)}else{apiList[idx]=c}; saveToStorage(); renderApiSelect(); loadApiConfig(); alert("Saved"); }
+    function deleteApi() { const idx=document.getElementById('savedApis').value; if(idx==="")return; apiList.splice(idx,1); saveToStorage(); renderApiSelect(); loadApiConfig(); }
     function saveToStorage() { localStorage.setItem(STORAGE_KEY, JSON.stringify(apiList)); }
 
-
-    // --- 2. 生成邏輯 (包含多圖修復) ---
+    // --- 生成邏輯 (單圖精簡版) ---
     async function generate() {
         const url = document.getElementById('apiUrl').value;
         const key = document.getElementById('apiKey').value;
         const prompt = document.getElementById('prompt').value;
         const aspectRatio = document.getElementById('aspectRatio').value;
-        const sampleCount = parseInt(document.getElementById('sampleCount').value);
 
         // UI 元素
         const btn = document.getElementById('btnGenerate');
         const status = document.getElementById('status');
-        const gallery = document.getElementById('gallery');
+        const img = document.getElementById('resultImage');
+        const placeholder = document.getElementById('placeholder');
         const apiOut = document.getElementById('apiOutput');
         
         // Info 元素
         const dTarget = document.getElementById('dispTarget');
         const dKey = document.getElementById('dispKey');
-        const dCount = document.getElementById('dispCount');
+        const dStatus = document.getElementById('dispStatus');
         const dSize = document.getElementById('dispSize');
 
         if (!url || !prompt) return alert("請填寫 URL 和 Prompt");
 
-        // 鎖定 UI
+        // 狀態重置
         btn.disabled = true;
-        status.innerText = "Processing...";
-        gallery.innerHTML = Array(sampleCount).fill('<div class="img-box"><span class="placeholder">...</span></div>').join('');
+        status.innerText = "⏳ Requesting...";
+        img.style.display = 'none';
+        placeholder.style.display = 'block';
+        placeholder.innerText = "生成中...";
+        
+        // 填充資訊面板
         dTarget.innerText = url;
         dKey.innerText = key ? "Provided (Hidden)" : "None";
-        dCount.innerText = "-";
-        dSize.innerText = "-";
+        dStatus.innerText = "Pending...";
+        dSize.innerText = "...";
 
         try {
             const response = await fetch('/api/proxy', {
@@ -265,66 +207,62 @@
                     contents: [{ parts: [{ text: prompt }] }],
                     generationConfig: {
                         responseModalities: ["IMAGE"],
-                        imageConfig: { aspectRatio, imageCount: sampleCount }
+                        imageConfig: { 
+                            aspectRatio: aspectRatio, 
+                            imageCount: 1 // 強制單張
+                        }
                     }
                 })
             });
 
             const rawText = await response.text();
-            dSize.innerText = (rawText.length / 1024 / 1024).toFixed(2) + " MB";
+            dSize.innerText = (rawText.length / 1024).toFixed(2) + " KB";
+            dStatus.innerText = `HTTP ${response.status}`;
 
             let data;
-            try { data = JSON.parse(rawText); } catch(e) { throw new Error("API Returned Non-JSON: " + rawText.substring(0, 300)); }
+            try { data = JSON.parse(rawText); } catch(e) { throw new Error("API Non-JSON Error"); }
 
             apiOut.innerText = JSON.stringify(data, null, 2).substring(0, 5000);
-            status.innerText = `HTTP ${response.status}`;
 
-            // --- 核心修復：全方位圖片解析 ---
-            const images = [];
-            if (data.candidates && Array.isArray(data.candidates)) {
-                data.candidates.forEach(cand => {
-                    if (cand.content && cand.content.parts) {
-                        cand.content.parts.forEach(part => {
-                            // 情況 A: 標準格式
-                            if (part.inlineData?.data) {
-                                images.push(part.inlineData.data);
-                            }
-                            // 情況 B: Markdown 格式 (支援同一 part 內有多張)
-                            else if (part.text) {
-                                const regex = /data:image\/[^;]+;base64,([A-Za-z0-9+/=]+)/g;
-                                let match;
-                                while ((match = regex.exec(part.text)) !== null) {
-                                    if(match[1]) images.push(match[1]);
-                                }
-                            }
-                        });
+            // 圖片提取
+            let b64 = null;
+            if (data.candidates?.[0]?.content?.parts) {
+                const parts = data.candidates[0].content.parts;
+                for (const part of parts) {
+                    if (part.inlineData?.data) {
+                        b64 = part.inlineData.data;
+                        break;
+                    } else if (part.text) {
+                        // 檢查是否有錯誤訊息
+                        if (part.text.includes("image upload err")) {
+                            throw new Error("Proxy Error: 圖床損壞 (image upload err)");
+                        }
+                        const match = part.text.match(/data:image\/[^;]+;base64,([A-Za-z0-9+/=]+)/);
+                        if (match && match[1]) {
+                            b64 = match[1];
+                            break;
+                        }
                     }
-                });
+                }
             }
 
-            // 去重
-            const uniqueImages = [...new Set(images)];
-            dCount.innerText = uniqueImages.length;
-
-            if (uniqueImages.length > 0) {
-                gallery.innerHTML = uniqueImages.map((b64, i) => `
-                    <div class="img-box">
-                        <img src="data:image/png;base64,${b64}" onclick="window.open(this.src)" />
-                        <div class="img-label">#${i+1}</div>
-                    </div>
-                `).join('');
-                status.innerText = `✅ Success: ${uniqueImages.length} images`;
+            if (b64) {
+                img.src = `data:image/png;base64,${b64}`;
+                img.style.display = 'block';
+                placeholder.style.display = 'none';
+                status.innerText = "✅ 生成成功";
                 status.style.color = "#4ade80";
             } else {
-                gallery.innerHTML = `<div class="img-box" style="border-color:#f59e0b"><span class="placeholder" style="color:#f59e0b">無圖片數據</span></div>`;
-                status.innerText = "⚠️ No Images Found";
+                status.innerText = "⚠️ 未找到圖片";
                 status.style.color = "#f59e0b";
+                placeholder.innerText = "無圖片數據";
             }
 
         } catch (e) {
-            status.innerText = "❌ Error";
-            status.style.color = "red";
-            apiOut.innerText += `\n\nERROR: ${e.message}`;
+            status.innerText = "❌ 錯誤";
+            status.style.color = "#ef4444";
+            placeholder.innerText = "Error: " + e.message;
+            apiOut.innerText += `\n\n[ERROR]: ${e.message}`;
         } finally {
             btn.disabled = false;
         }
