@@ -1,7 +1,7 @@
 {
-  "name": "gemini-proxy-tool",
-  "version": "1.0.0",
-  "description": "Proxy server for Gemini 3 Image generation",
+  "name": "gemini-3-proxy",
+  "version": "2.0.0",
+  "description": "Proxy server for Gemini 3 Image generation with robust error handling",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
